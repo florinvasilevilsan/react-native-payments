@@ -14,7 +14,7 @@ import {
 } from './constants';
 const noop = () => {};
 
-import PaymentRequest from '.';
+import PaymentRequest from './';
 import NativePayments from '../NativeBridge';
 
 // Helpers
@@ -116,6 +116,7 @@ export default class PaymentRequestUpdateEvent {
     // React Native Payments specific 👇
     // ---------------------------------
     const normalizedDetails = convertDetailAmountsToString(target._details);
+
     return (
       NativePayments.handleDetailsUpdate(normalizedDetails, DOMException)
         // 14. Upon fulfillment of detailsPromise with value value

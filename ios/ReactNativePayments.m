@@ -59,6 +59,13 @@ RCT_EXPORT_METHOD(createPaymentRequest: (NSDictionary *)methodData
     self.paymentRequest.supportedNetworks = [self getSupportedNetworksFromMethodData:methodData];
     self.paymentRequest.paymentSummaryItems = [self getPaymentSummaryItemsFromDetails:details];
     self.paymentRequest.shippingMethods = [self getShippingMethodsFromDetails:details];
+    self.paymentRequest.merchantIdentifier = merchantId;
+
+    if ([options[@"shippingContactEditingMode"] isEqualToString: @"storePickup"]) {
+        self.paymentRequest.shippingContactEditingMode = PKShippingContactEditingModeStorePickup;
+        self.paymentRequest.shippingType = PKShippingTypeStorePickup;
+        self.paymentRequest.shippingContact = [self getShippingContactFromDetails:details];
+    }
 
     [self setRequiredAddressFieldsFromOptions:options];
 
@@ -114,7 +121,6 @@ RCT_EXPORT_METHOD(handleDetailsUpdate: (NSDictionary *)details
     if (!self.shippingContactCompletion && !self.shippingMethodCompletion && !self.paymentMethodCompletion) {
         // TODO:
         // - Call callback with error saying shippingContactCompletion was never called;
-
         return;
     }
 
@@ -315,6 +321,35 @@ RCT_EXPORT_METHOD(handleDetailsUpdate: (NSDictionary *)details
     return paymentSummaryItems;
 }
 
+- (PKContact *_Nonnull)getShippingContactFromDetails:(NSDictionary *_Nonnull)details
+{
+    CNMutablePostalAddress *postalAddress = [[CNMutablePostalAddress alloc] init];
+    
+    postalAddress.street = [details valueForKeyPath:@"shippingContact.postalAddress.street"];
+    postalAddress.state = [details valueForKeyPath:@"shippingContact.postalAddress.state"];
+    postalAddress.city = [details valueForKeyPath:@"shippingContact.postalAddress.city"];
+    postalAddress.postalCode = [details valueForKeyPath:@"shippingContact.postalAddress.postalCode"];
+    postalAddress.ISOCountryCode = [details valueForKeyPath:@"shippingContact.postalAddress.isoCountryCode"];
+    postalAddress.subLocality = NULL;
+    postalAddress.subAdministrativeArea = NULL;
+
+     NSPersonNameComponents * name = [[NSPersonNameComponents alloc] init];
+
+    [name setFamilyName:[details valueForKeyPath:@"shippingContact.name.familyName"]];
+    [name setNickname:NULL];
+    [name setGivenName:NULL];
+    [name setMiddleName:NULL];
+    [name setNamePrefix:NULL];
+    [name setNameSuffix:NULL];
+
+    PKContact * shippingContact = [[PKContact alloc] init];
+    shippingContact.name = name;
+    shippingContact.postalAddress = postalAddress;
+    shippingContact.emailAddress = [details valueForKeyPath:@"shippingContact.emailAddress"];
+
+    return shippingContact;
+}
+
 - (NSArray<PKShippingMethod *> *_Nonnull)getShippingMethodsFromDetails:(NSDictionary *_Nonnull)details
 {
     // Setup `shippingMethods` array
@@ -366,9 +401,10 @@ RCT_EXPORT_METHOD(handleDetailsUpdate: (NSDictionary *)details
 
 - (void)setRequiredAddressFieldsFromOptions:(NSDictionary *_Nonnull)options
 {
+    NSMutableSet <PKContactField> *shippingContactFields = [NSMutableSet setWithArray:@[]];
     // Request Shipping
     if ([options[@"requestShipping"] boolValue]) {
-        NSMutableSet <PKContactField> *shippingContactFields = [NSMutableSet setWithArray:@[PKContactFieldPostalAddress]];
+        [shippingContactFields addObject:PKContactFieldPostalAddress];
         if ([options[@"requestPayerName"] boolValue]) {
             [shippingContactFields addObject:PKContactFieldName];
         }
@@ -376,12 +412,13 @@ RCT_EXPORT_METHOD(handleDetailsUpdate: (NSDictionary *)details
         if ([options[@"requestPayerPhone"] boolValue]) {
             [shippingContactFields addObject:PKContactFieldPhoneNumber];
         }
-
-        if ([options[@"requestPayerEmail"] boolValue]) {
-            [shippingContactFields addObject:PKContactFieldEmailAddress];
-        }
-        self.paymentRequest.requiredShippingContactFields = shippingContactFields;
     }
+
+    if ([options[@"requestPayerEmail"] boolValue]) {
+        [shippingContactFields addObject:PKContactFieldEmailAddress];
+    }
+
+    self.paymentRequest.requiredShippingContactFields = shippingContactFields;
 
     if ([options[@"requestBilling"] boolValue]) {
         self.paymentRequest.requiredBillingContactFields = [NSSet setWithArray:@[PKContactFieldPostalAddress]];

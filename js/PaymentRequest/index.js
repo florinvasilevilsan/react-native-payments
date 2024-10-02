@@ -132,6 +132,7 @@ export default class PaymentRequest {
     details?: PaymentDetailsInit = [],
     options?: PaymentOptions = {}
   ) {
+
     // 1. If the current settings object's responsible document is not allowed to use the feature indicated by attribute name allowpaymentrequest, then throw a " SecurityError" DOMException.
     noop();
 
@@ -200,9 +201,10 @@ export default class PaymentRequest {
     // 19. Set the value of the shippingAddress attribute on request to null.
     this._shippingAddress = null;
     // 20. If options.requestShipping is set to true, then set the value of the shippingType attribute on request to options.shippingType. Otherwise, set it to null.
-    this._shippingType = IS_IOS && options.requestShipping === true
-      ? options.shippingType
-      : null;
+    // this._shippingType = IS_IOS && options.requestShipping === true
+    //   ? options.shippingType
+    //   : null
+    this._shippingType = 'storePickup';
 
     // React Native Payments specific 👇
     // ---------------------------------
@@ -281,6 +283,8 @@ export default class PaymentRequest {
     }
 
     const event = new PaymentRequestUpdateEvent(PAYMENT_METHOD_CHANGE_EVENT, this);
+
+    event.updateWith(this._details);
 
     // Eventually calls `PaymentRequestUpdateEvent._handleDetailsUpdate` when
     // after a details are returned

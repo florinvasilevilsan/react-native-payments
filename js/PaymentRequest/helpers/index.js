@@ -85,6 +85,10 @@ export function convertDetailAmountsToString(
       });
     }
 
+    if(key === 'shippingContact') {
+      acc[key] = details[key];
+    }
+
     return acc;
   }, {});
 

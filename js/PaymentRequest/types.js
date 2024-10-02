@@ -12,11 +12,30 @@ export type PaymentCurrencyAmount = {
   value: string
 };
 
+type ShippingContactName = {
+  familyName: string
+}
+type ShippingContactPostalAddress = {
+  street: String,
+  city: String,
+  state: String,
+  postalCode: String,
+  isoCountryCode: String,
+}
+
+type ShippingContact = {
+  emailAddress?: string,
+  name?: ShippingContactName,
+  postalAddress: ShippingContactPostalAddress
+}
+
+
 // https://www.w3.org/TR/payment-request/#paymentdetailsbase-dictionary
 export type PaymentDetailsBase = {
   displayItems: Array<PaymentItem>,
   shippingOptions: Array<PaymentShippingOption>,
   modifiers: Array<PaymentDetailsModifier>
+  shippingContact?: ShippingContact
 };
 
 // https://www.w3.org/TR/payment-request/#paymentdetailsinit-dictionary
@@ -51,7 +70,8 @@ export type PaymentOptions = {
   requestPayerPhone: boolean,
   requestShipping: boolean,
   requestBilling: boolean,
-  shippingType: PaymentShippingType
+  shippingType: PaymentShippingType,
+  shippingContactEditingMode: string
 };
 
 // https://www.w3.org/TR/payment-request/#paymentitem-dictionary
